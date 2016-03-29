@@ -1,7 +1,7 @@
 # Panorama Template
 Stripped-down, modernized version of the [American Panorama template](https://github.com/americanpanorama/panorama-template). This template/boilerplate offers a starting point for creating applications that use components from [Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama). It is built using [React](https://facebook.github.io/react/), [Redux](redux.js.org), and [React Router](https://github.com/reactjs/react-router), but uses only a minimal subset of offerings from each. While designed to be used with [Panorama toolkit](https://github.com/stamen/panorama), at it's heart it's really just a React project template, and can be used with or without the Panorama components.
 
-
+#### N.B. [Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama) is not yet published on npm. Until it is, either `npm link` to a local copy of Stamen Panorama, or just remove it from `package.json` if you don't need it. --@ericsoco 2016.03.29
 
 ## Setup
 #### 1. Set up required Node version 
