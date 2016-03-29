@@ -28,7 +28,7 @@ export default {
 					return true;
 
 				default:
-					return false;
+					return state;
 
 			}
 		}, 
