@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link href='../lib/leaflet.css'
+      rel='stylesheet' type='text/css'/>
+<style>
+body {
+	background: #f9f9f9;
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #292929;
+}
+#map-canvas, pre {
+  float: left;
+}
+
+path {
+  stroke-linejoin: round;
+}
+
+.land {
+  fill: #ddd;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5px;
+}
+
+.voronoi {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+  stroke-opacity: 0.4;
+}
+
+.marker {
+  text-anchor: middle;
+  fill: #222;
+  opacity: 0.9;
+  font-weight: bold;
+}
+
+.cell {
+  opacity: 0.55;
+  -webkit-transition: fill 0.35s; /* Safari */
+  transition: fill 0.35s;
+}
+
+.cell:hover {
+  opacity: 0.9;
+}
+
+#map-canvas {
+  width: 660px;
+  height: 500px;
+}
+</style>
+<body>
+<h2>AccPrecip History Voronoi</h2>
+<p>A proof-of-concept animated voronoi diagram.</p>
+<div id="map-canvas"></div>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script src="../lib/leaflet.js"></script>
+<script src="../lib/L.D3SvgOverlay.js"></script>
+<script>
+var center = [39.08, -120.04];
+
+var stations = [];
+var stationHistory = {};
+
+var tempsColorScale = d3.scale.linear()
+	.domain(d3.range(9).map(function(i) { return i*10; }))
+	.range(colorbrewer.PuBuGn[9]);
+
+var width = 660,
+    height = 500;
+
+var map = L.map("map-canvas",{center:center, zoom: 10});
+L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors, © CartoDB',
+        subdomains: '1234'
+      }).addTo(map);
+
+var output = d3.select("body").append("pre")
+  .style("margin", "0 0 0 20px");
+
+queue()
+    .defer(d3.json, "../data/us.json")
+    .defer(d3.json, "http://stamen-simple-cors.herokuapp.com/nws-current/?extents=38.5,-120.5,39.5,-119.6")
+    .await(ready);
+
+function ready(error, us, sensors) {
+  if (error) throw error;
+
+  stations = sensors.stations.filter(function(d) {
+    return (d.AccPrecip !== "?" &&
+            d.AccPrecip !== undefined &&
+            d.id !== "VCEN2" &&
+            d.id !== "UP686" &&
+            d.id !== "KCNN2");
+  });
+
+  stations.forEach(function(d) {
+    d.latLng = [+d.latitude,+d.longitude];
+  });
+
+  var d3Overlay = L.d3SvgOverlay(function(sel, proj) {
+
+    var voronoi = d3.geom.voronoi(stations.map(function(d) {
+      var pos = proj.latLngToLayerPoint(d.latLng);
+      return [pos.x, pos.y];
+    }));
+
+    sel.selectAll("path.cell")
+        .data(voronoi)
+        .enter().append("path")
+        .attr("class", "cell")
+        .attr("d", function(d) { return "M" + d.join(",") + "Z"; })
+        .style("fill", function(d,i) { return "#777"; });
+
+    sel.append("path")
+        .datum(voronoi)
+        .attr("class", "voronoi")
+        .attr("d", function(d) { return "M" + d.map(function(d) { return d.join("L"); }).join("ZM") + "Z"; });
+
+    sel.selectAll("text.marker")
+        .data(voronoi)
+        .enter().append("text")
+        .attr("class", "marker")
+        .attr("transform", function(d) { return "translate(" + d3.geom.polygon(d3.geom.polygon(d).clip([[0,0], [0,height], [width, height], [width, 0]])).centroid() + ")"})
+        .text(function(d,i) { return stations[i].name; });
+
+    stations.forEach(function(d) {
+      loadStationHistory(d.id, 168, function(err, rsp) {
+        stationHistory[d.id] = rsp;
+        stationHistory[d.id].interpolation = rsp;
+      });
+    });
+
+  });
+
+  d3Overlay.addTo(map);
+
+  var counter = 0;
+  d3.timer(function(elapsed) {
+    var counter = d3.round(elapsed/400) % 168;
+    output.text("");
+    d3.selectAll("path.cell")
+        .style("fill", function(d,i) {
+          var station = stations[i]
+          var id = station.id;
+          if (!(id in stationHistory)) return "#777";
+          if (stationHistory[id].observations.length <= counter) return "#777";
+
+          var observation = stationHistory[id].observations[counter];
+          if (!("AccPrecip" in observation)) {
+            output.text(output.text() + station.name + " (" + station.id + ") AccPrecip: " + "unknown" + "\n");
+            return "#777";
+          }
+
+          output.text(output.text() + station.name + " (" + station.id + ") AccPrecip: " + observation.AccPrecip + "\n");
+          return tempsColorScale(observation.AccPrecip);
+        });
+
+    d3.selectAll("text.marker")
+       .text(function(d,i) {
+          var station = stations[i]
+          var id = station.id;
+          if (!(id in stationHistory)) return "";
+          if (stationHistory[id].observations.length <= counter) return "";
+
+          var observation = stationHistory[id].observations[counter];
+          if (!("AccPrecip" in observation)) {
+            return "";
+          }
+
+          return observation.AccPrecip;
+       });
+  });
+
+}
+
+/**
+ * Load 10-min increments of historical observations for a station
+ * Note: NWS data requests must go through a CORS proxy, e.g. https://github.com/ericsoco/simpleCORS
+ */
+function loadStationHistory (stationId, numHours, cb) {
+	numHours = numHours || 168;		// one week
+	// http://www.wrh.noaa.gov/mesowest/getobextJson.php?sid=ZEPNV&num=168
+	d3.json('http://stamen-simple-cors.herokuapp.com/nws-historical/?sid='+ stationId +'&num='+ numHours, function (err, rsp) {
+		cb(err, rsp);
+	});
+}
+
+</script>
+

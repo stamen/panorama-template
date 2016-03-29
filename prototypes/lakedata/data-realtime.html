@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Realtime UCD Lake Tahoe data</title>
+<style>
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+  margin: 40px 60px;
+}
+pre {
+  height: 200px;
+  overflow: auto;
+  tab-size: 12;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+}
+</style>
+</head>
+
+<body>
+<h2>UCD Lake Tahoe Data - Realtime</h2>
+<p>Realtime CSV Data from the <a href="http://lakedata.ucdavis.edu/">UCD Lake Date API</a></p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+
+<script>
+var sensors = [
+  {
+    id: "C_Rock"
+  },
+  {
+    id: "Rubicon"
+  },
+  {
+    id: "Sunnyside"
+  },
+  {
+    id: "TDR1"
+  },
+  {
+    id: "TDR2"
+  },
+  {
+    id: "T_Vista"
+  },
+  {
+    id: "USCG"
+  }
+];
+
+sensors.forEach(function(sensor) {
+  d3.csv("lookups/" + sensor.id + "_titles.csv", function(error, lookups) {
+    d3.text("http://lakedata.ucdavis.edu/api/v1/realtime/" + sensor.id + "?key=fa7897fe5a0cb9a3f2a64c997cd97308&format=csv", function(error, raw_data) {
+      var headers = lookups.map(function(d) { return d.key; }).join(",");
+      headers = [""].concat(headers); // extra numeric key as first column
+
+      var csv_text = [headers, raw_data].join("\n");
+      var data = d3.csv.parse(csv_text);
+
+      d3.select("body")
+        .append("h3")
+        .text(sensor.id);
+
+      d3.select("body")
+        .append("div")
+        .append("a")
+        .attr("href", "http://lakedata.ucdavis.edu/realtime/" + sensor.id)
+        .text("Overview");
+
+      d3.select("body")
+        .append("p")
+        .selectAll("div")
+        .data(lookups)
+        .enter().append("div")
+        .text(function(d) { return d.key + ": " + d.title; });
+
+      d3.select("body")
+        .append("pre")
+        .text(d3.tsv.format(data));
+    });
+  });
+});
+</script>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Tahoe river data</title>
+<style>
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+  width: 680px;
+  margin: 20px auto;
+}
+pre {
+  height: 200px;
+  overflow: auto;
+  tab-size: 18;
+}
+</style>
+</head>
+
+<body>
+<h2>Truckee River Sensors</h2>
+<p>CSV Data from the <a href="http://www.cnrfc.noaa.gov/">California Nevada River Forecast Center</a></p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+
+<script>
+var sensors = [
+  {
+    name: "Truckee",
+    river: "Truckee",
+    id: "TRCC1",
+    latitude: 39.30,
+    longitude: -120.20,
+    elevation: 5860
+  },
+  {
+    name: "Farad",
+    river: "Truckee",
+    id: "FARC1",
+    latitude: 39.43,
+    longitude: -120.03,
+    elevation: 5153
+  },
+  {
+    name: "Reno",
+    river: "Truckee",
+    id: "TRRN2",
+    latitude: 39.53,
+    longitude: -119.79,
+    elevation: 4445
+  },
+  {
+    name: "Vista",
+    river: "Truckee",
+    id: "VISN2",
+    latitude: 39.52,
+    longitude: -119.70,
+    elevation: 4368
+  }
+];
+
+var river_url_base = {
+  home: "http://www.cnrfc.noaa.gov/graphicalRVF.php?id=",
+  csv: "http://www.cnrfc.noaa.gov/graphicalRVF_csv.php?id="
+};
+
+sensors.forEach(function(sensor) {
+  d3.csv(river_url_base.csv + sensor.id, function(error, data) {
+    d3.select("body")
+      .append("h3")
+      .text(sensor.river + " River - " + sensor.name + " (" + sensor.id + ")");
+
+    d3.select("body")
+      .append("div")
+      .append("a")
+      .attr("href", river_url_base.home + sensor.id)
+      .text("Overview");
+
+    d3.select("body")
+      .append("div")
+      .append("a")
+      .attr("href", river_url_base.csv + sensor.id)
+      .text("CSV");
+
+    d3.select("body")
+      .append("pre")
+      .text(d3.tsv.format(data));
+  });
+});
+</script>

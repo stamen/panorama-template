@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Historic UCD Lake Tahoe data</title>
+<style>
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+  margin: 40px 60px;
+}
+pre {
+  height: 200px;
+  overflow: auto;
+  tab-size: 12;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+}
+</style>
+</head>
+
+<body>
+<h2>UCD Lake Tahoe Data - Historic</h2>
+<p>Historic JSON Data from the <a href="http://lakedata.ucdavis.edu/">UCD Lake Date API</a>. Start date: 2011-09-10</p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+
+<script>
+var sensors = [
+  {
+    id: "c_rock"
+  },
+  {
+    id: "rubicon"
+  },
+  {
+    id: "sunny_side"
+  },
+  {
+    id: "t_cove"
+  },
+  {
+    id: "t_vista"
+  },
+  {
+    id: "tdr1"
+  },
+  {
+    id: "tdr2"
+  },
+  {
+    id: "usgs"
+  }
+];
+
+// just do the first 2 sensors
+sensors.forEach(function(sensor) {
+  d3.json("http://lakedata.ucdavis.edu/api/v1/historic/" + sensor.id + "?key=fa7897fe5a0cb9a3f2a64c997cd97308&format=json&start=2011-09-10", function(error, data) {
+    if (error) console.log(error);
+
+    d3.select("body")
+      .append("h3")
+      .text(sensor.id);
+
+    d3.select("body")
+      .append("div")
+      .append("a")
+      .attr("href", "http://lakedata.ucdavis.edu/historic/" + sensor.id)
+      .text("Overview");
+
+    d3.select("body")
+      .append("pre")
+      .text(d3.tsv.format(data));
+  });
+});
+</script>

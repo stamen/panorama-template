@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+path {
+  stroke-linejoin: round;
+}
+
+.land {
+  fill: #ddd;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5px;
+}
+
+.voronoi {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.cell {
+  opacity: 0.75;
+}
+
+.cell:hover {
+  opacity: 0.9;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script>
+var tempsColorScale = d3.scale.quantize()
+	.domain([90, 10])
+	.range(colorbrewer.RdBu[9]);
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.albers()
+  .rotate([119.4, -0.4, 0])
+  .scale(28000);
+
+var path = d3.geo.path()
+    .projection(projection)
+    .pointRadius(1.5);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var output = d3.select("body").append("pre");
+
+queue()
+    .defer(d3.json, "../data/us.json")
+    .defer(d3.json, "http://stamen-simple-cors.herokuapp.com/nws-current/?extents=38.83756825896614,-120.24948120117188,39.35766163717121,-119.81277465820312")
+    .await(ready);
+
+function ready(error, us, sensors) {
+  if (error) throw error;
+
+  var data = sensors.stations.filter(function(d) {
+    return (d.Temp !== "?" && d.Temp !== undefined);
+  });
+
+  svg.append("path")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "states")
+      .attr("d", path);
+
+  var voronoi = d3.geom.voronoi(data.map(function(d) {
+        return projection([d.longitude, d.latitude]);
+      }));
+
+  svg.selectAll("path.cell")
+      .data(voronoi)
+      .enter().append("path")
+      .attr("class", "cell")
+      .attr("d", function(d) { return "M" + d.join(",") + "Z"; })
+      .style("fill", function(d,i) { return tempsColorScale(data[i].Temp); })
+      .on("mouseover", function(d,i) {
+        var station = data[i];
+        output.text(station.name + "\nTemp: " + station.Temp);
+      });
+
+  svg.append("path")
+      .datum(voronoi)
+      .attr("class", "voronoi")
+      .attr("d", function(d) { return "M" + d.map(function(d) { return d.join("L"); }).join("ZM") + "Z"; });
+}
+
+</script>
+

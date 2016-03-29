@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tahoe current met conditions</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+
+<style>
+
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+}
+
+#map {
+	width: 680px;
+	height: 800px;
+}
+
+.content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 10px;
+	pointer-events: none;
+}
+
+.station-marker {
+	font-size: 1.5em;
+	text-shadow: -1px -1px 1px rgba(255,255,255,0.5), 1px 1px 1px rgba(0,0,0,1.0);
+	text-align: center;
+	width: 2em;
+	height: 1.5em;
+}
+.station-marker h4 {
+	margin: 0;
+}
+.leaflet-popup-content {
+	margin: 0.5em 0.75em;
+}
+
+.time-label {
+	font-size: 2em;
+	text-align: center;
+}
+
+.time-slider {
+	
+}
+
+.axis {
+	/* font: 10px sans-serif; */
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+
+<body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet-src.js"></script>
+<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+
+<script>
+
+var stationData = [],
+	dateFormatIn = d3.time.format('%I %p PST %b %d, %Y'),	// e.g. 12:00 pm PST Mar 01, 2016
+	dateFormatOut = d3.time.format('%Y %b %d, %I%p'),
+	lowerLeft = [38.83756825896614, -120.24948120117188],
+	upperRight = [39.35766163717121, -119.81277465820312],
+	zoom = 11,
+	map;
+
+var body = document.querySelector('body');
+
+var mapEl = d3.select('body').append('div')
+	.attr('id', 'map')
+	.node();
+var center = L.latLng(lowerLeft[0] + 0.5*(upperRight[0]-lowerLeft[0]), lowerLeft[1] + 0.5*(upperRight[1]-lowerLeft[1]));
+map = L.map('map').setView(center, zoom);
+map.addLayer(new L.StamenTileLayer('terrain'));
+
+var margin = { top: 0, right: 0, bottom: 0, left: 0 },
+	width = mapEl.offsetWidth - margin.left - margin.right,
+	height = mapEl.offsetHeight - margin.top - margin.bottom;
+
+var container = d3.select('body').append('div')
+	.attr('class', 'content')
+	.style('width', width + margin.left + margin.right + 'px')
+	.style('height', height + margin.top + margin.bottom + 'px');
+
+var svg = container.html('').append('svg')
+	.attr('width', width + margin.left + margin.right)
+	.attr('height', height + margin.top + margin.bottom)
+.append('g')
+	.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+var timeLabel = container.append('div')
+.append('p')
+	.classed('time-label', true);
+timeLabel.append('p')
+	.text('NWS Stations');
+
+var tempsColorScale = d3.scale.quantize()
+	.domain([90, 10])
+	.range(colorbrewer.RdBu[9]);
+
+function loadStationData (cb) {
+
+	// not sure why `zoom` param is relevant when passing `extents`,
+	// but there are fewer stations returned without it.
+	d3.json('http://stamen-simple-cors.herokuapp.com/nws-current/?extents='+ lowerLeft.join(',') +','+ upperRight.join(',') +'&zoom='+ zoom +'&all=1', function (err, rsp) {
+		if (err) { throw err; }
+
+		// clean the data
+		stationData = rsp.stations.map(function (s) {
+			return Object.keys(s).reduce(function (obj, key) {
+				obj[key.toLowerCase()] = s[key];
+				return obj;
+			}, {});
+		});
+
+		cb();
+	});
+
+}
+
+var queue = d3_queue.queue();
+queue.defer(loadStationData);
+queue.await(function () {
+
+	stationData.forEach(function (station) {
+		var markerMarkup = '<h4>' + (station.temp || '?') + '</h4>';
+		var marker = L.marker([station.latitude, station.longitude], {
+			icon: L.divIcon({
+				className: 'station-marker',
+				html: markerMarkup,
+				iconSize: null
+			})
+		}).addTo(map);
+		marker._icon.style.color = tempsColorScale(parseInt(station.temp));
+		var popup = L.popup({
+				closeButton: false
+			})
+			.setContent(capitalize(station.name) + '(' + station.id + ')');
+		marker.bindPopup(popup);
+	});
+
+});
+
+function capitalize (s) {
+    return s.toLowerCase().replace(/\b./g, function (a) {
+    	return a.toUpperCase();
+    });
+};
+
+</script>
+
+</body>
+</html>

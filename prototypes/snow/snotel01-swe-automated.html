@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Tahoe snow data</title>
+<style>
+
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+}
+
+.content {
+	
+}
+
+.swe {
+	fill: #d3e6ff;
+	stroke: none;
+}
+
+.swe-max {
+	fill: none;
+	stroke: #ffcc99;
+}
+
+.time-label {
+	font-size: 2em;
+	text-align: center;
+}
+
+.time-slider {
+	
+}
+
+.axis {
+	/* font: 10px sans-serif; */
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+</style>
+</head>
+
+<body>
+
+
+<!--
+
+TODO: SNOTEL data -- bar graph animated by timeline scrubber or autoplay.
+somehow represent deviation between steps (#7 Precip Inc) (to show snowfall events)
+make it work for multiple data stations.
+
+SWE compared with depth.
+(where is depth??)
+show temp too?
+
+skip lines for csvcut:
+tail -n +8 heavenly-snotel.csv | csvcut -n
+-->
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+
+<script>
+
+var body = document.querySelector('body');
+
+var margin = { top: 10, right: 50, bottom: 10, left: 50 },
+	width = 600/*body.offsetWidth*/ - margin.left - margin.right,
+	height = 600/*body.offsetHeight*/ - margin.top - margin.bottom;
+
+var container = d3.select('body').append('div')
+	.attr('class', 'content')
+	.style('width', width + margin.left + margin.right + 'px')
+	.style('height', height + margin.top + margin.bottom + 'px');
+
+var svg = container.html('').append('svg')
+	.attr('width', width + margin.left + margin.right)
+	.attr('height', height + margin.top + margin.bottom)
+.append('g')
+	.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+var dataSources = [
+	{
+		name: 'heavenly',
+		filename: '../data/heavenly-snotel.csv',
+		firstline: 8
+	}
+];
+var keyMap = {
+	'Air Temperature Average (degF)': "tempAvg",
+	'Air Temperature Maximum (degF)': "tempMax",
+	'Air Temperature Minimum (degF)': "tempMin",
+	'Date': "date",
+	'Precipitation Accumulation (in)': "precipAcc",
+	'Precipitation Increment (in)': "precipInc",
+	'Snow Water Equivalent (in)': "swe"
+}
+var dateFormatIn = d3.time.format('%Y-%m-%d'),
+	dateFormatOut = d3.time.format('%Y %b %d');
+var stationsData = {};
+
+function loadStationData (source, cb) {
+
+	d3.xhr(source.filename, function (err, rsp) {
+
+		if (err) { throw err; }
+
+		var stationName;
+		try {
+			rsp = rsp.responseText.split('\n');
+			stationName = rsp[0].substr(2);
+			rsp = rsp.slice(source.firstline - 1).join('\n');
+			csv = d3.csv.parse(rsp);
+		} catch (parsingError) {
+			throw parsingError;
+		}
+
+		var timesteps = {},
+			timestep,
+			k;
+
+		csv.forEach(function (d, i) {
+			timestep = {};
+			
+			// make keys easier to work with
+			for (key in keyMap) {
+				k = keyMap[key];
+				if (k === 'date') {
+					// store unix timestamps instead of formatted date
+					timestep[k] = +dateFormatIn.parse(d[key]);
+				} else {
+					timestep[k] = parseFloat(d[key]);
+				}
+			}
+
+			timesteps[timestep.date] = timestep;
+		});
+
+		stationsData[source.name] = {
+			name: stationName,
+			stepsHash: timesteps,
+			stepsList: _.values(timesteps)
+		};
+		cb();
+
+	});
+}
+
+
+var queue = d3_queue.queue();
+dataSources.forEach(function (source) {
+	queue.defer(loadStationData, source)
+});
+queue.await(function () {
+
+	var barWidth = 400;
+	var yScale = d3.scale.linear()
+		.range([height, 0])
+		.domain([0, d3.max(stationsData.heavenly.stepsList, function (d) { return d.swe; })]);
+
+	var yAxis = d3.svg.axis()
+		.scale(yScale)
+		.orient('left');
+	svg.append('g')
+		.classed('y axis', true)
+		.call(yAxis);
+
+	var sweBar = svg.append('rect')
+		.classed('swe', true)
+	.attr('x', 0.5 * (width - barWidth))
+	.attr('width', barWidth)
+
+	function scaledHeight (d) { return yScale(d.swe); }
+	function setDatum (datum) {
+		sweBar.datum(datum)
+			.attr('y', scaledHeight)
+			.attr('height', function (d) { return height - yScale(d.swe); });
+
+		timeLabel.datum(datum)
+			.text(function (d) { return dateFormatOut(new Date(datum.date)); });
+	}
+
+	var currentStep = 0;
+	var isAutoStepping = true;
+	function step () {
+		setDatum(stationsData.heavenly.stepsList[++currentStep]);
+		if (isAutoStepping) {
+			window.requestAnimationFrame(step);
+		}
+	}
+
+	if (isAutoStepping) {
+		window.requestAnimationFrame(step);
+	}
+
+	var timeLabel = container.append('div')
+	.append('p')
+		.classed('time-label', true);
+	timeLabel.append('p')
+		.text(stationsData.heavenly.name);
+
+	var timeSlider = container.append('div')
+		.classed('time-slider', true)
+
+});
+
+</script>

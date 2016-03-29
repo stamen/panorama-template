@@ -1,0 +1,41 @@
+index,key,title
+1,YEAR,Calendar year
+2,DAY,Julian Day
+3,TIME,"hhmm, hh = hour, mm = minutes in GMT"
+4,KZ,K & Z Shortwave Radiometer (W/m^2)
+5,SD,standard deviation of above
+6,Epp_LW,Eppley Longwave Radiometer (W/m^2)
+7,SD,standard deviation of above
+8,CNR1_SkySW,Incoming Shortwave Radiometer (W/m^2)
+9,SD,standard deviation of above
+10,CNR1_H2OSW,Reflected Shortwave Radiometer (W/m^2)
+11,SD,standard deviation of above
+12,CNR1_SkyLW,Incoming Longwave Radiometer (W/m^2)
+13,SD,standard deviation of above
+14,CNR1_H2OLW,Back Longwave Radiometer (W/m^2)
+15,SD,standard deviation of above
+16,RAIN,rain gage (mm)
+17,PRES,pressure (mbar)
+18,SD,standard deviation of above
+19,T_AIR,Air Temperature (deg C)
+20,SD,standard deviation of above
+21,RH,Relative Humidity (%)
+22,SD,standard deviation of above
+23,T_H2O,Water Temperature (deg C)
+24,SD,standard deviation of above
+25,ASPD1,Analog Scaler Wind Speed (m/sec)
+26,ASPD2,Analog Resultant Wind Speed (m/sec)
+27,ADIR,Wind Direction (deg)
+28,SD,standard deviation of above
+29,GUST,Analog Scaler Wind Speed (m/sec)
+30,OSPD1,Orthoganol Scaler Wind Speed (m/sec)
+31,OSPD2,Orthoganol Vector Wind Speed (m/sec)
+32,ODIR,Orthoganol Wind Direction (deg)
+33,SD,standard deviation of above
+34,BATT,Battery voltage (volts)
+35,RAD1,only on older data but kept as -9999 for consistency.
+36,SD,
+37,PSPD1,
+38,PSPD2,
+39,PDIR,
+40,SD,

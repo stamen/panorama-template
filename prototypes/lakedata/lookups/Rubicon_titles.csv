@@ -1,0 +1,18 @@
+index,key,title
+1,ID,Logger ID 
+2,YEAR,Calendar year
+3,DAY,Julian Day
+4,TIME,"hhmm, hh = hour, mm = minutes in GMT"
+5,WS_S,Analog Scaler Wind Speed (m/sec)
+6,WS_U,Analog Resultant Wind Speed (m/sec)
+7,DIR,Wind Direction (deg)
+8,SD,standard deviation of above
+9,Air_Temp,Air temperature
+10,RH,Relative Humidity
+,SD,standard deviation of above
+,,
+,,
+,,
+,H2O_TEMP,Water Temperature (deg C)
+,SD,standard deviation of above
+,BATT,Battery voltage (volts)

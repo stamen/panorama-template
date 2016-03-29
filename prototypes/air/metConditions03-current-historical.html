@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tahoe met conditions: current & historical</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+
+<style>
+
+body {
+	margin: 0;
+	background: #f9f9f9;
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #292929;
+}
+
+#flex-container {
+	display: flex;
+	flex-direction: row;
+}
+
+#page-title {
+	height: 3em;
+	width: 100%;
+	font-size: 2em;
+	text-align: center;
+}
+
+#map {
+	flex: 0 0 680px;
+	height: 800px;
+}
+
+.station-marker {
+	font-size: 1.5em;
+	text-shadow: -1px -1px 1px rgba(255,255,255,0.5), 1px 1px 1px rgba(0,0,0,1.0);
+	text-align: center;
+	width: 2em;
+	height: 1.5em;
+}
+.station-marker h4 {
+	margin: 0;
+}
+.leaflet-popup-content {
+	margin: 0.5em 0.75em;
+}
+
+
+#content {
+	flex: 1;
+}
+
+.historical-line {
+	fill: none;
+	stroke: #666666;
+	stroke-width: 1px;
+}
+
+.historical-datum {
+
+}
+
+.forecast {
+	fill: none;
+	stroke: #bbbbbb;
+	stroke-width: 2px;
+}
+
+circle {
+	fill: #ffffff;
+	fill-opacity: 0.0;
+	stroke: #666666;
+	stroke-width: 1.5px;
+	stroke-opacity: 0.25;
+	cursor: pointer;
+}
+
+.station-label {
+	position: relative;
+	top: -50px;
+	font-size: 2em;
+	text-align: center;
+}
+
+.time-slider {
+	
+}
+
+.axis {
+	/* font: 10px sans-serif; */
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="flex-container">
+	<div id="map"></div>
+	<div id="content"></div>
+</div>
+<h1 id="page-title">NWS stations: temps</h1>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.2.1/lodash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet-src.js"></script>
+<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+
+<script>
+
+var stationData = [],
+	dateFormatIn = d3.time.format('%I %p PST %b %d, %Y'),	// e.g. 12:00 pm PST Mar 01, 2016
+	dateFormatOut = d3.time.format('%b %d, %I%p'),
+	lowerLeft = [38.83756825896614, -120.24948120117188],
+	upperRight = [39.35766163717121, -119.81277465820312],
+	zoom = 11,
+	map;
+
+var body = document.querySelector('body');
+
+var mapEl = d3.select('#map').node();
+var center = L.latLng(lowerLeft[0] + 0.5*(upperRight[0]-lowerLeft[0]), lowerLeft[1] + 0.5*(upperRight[1]-lowerLeft[1]));
+map = L.map('map').setView(center, zoom);
+map.addLayer(new L.StamenTileLayer('terrain'));
+map.on('click', function (event) {
+	console.log(event.latlng);
+});
+
+var contentDiv = document.querySelector('#content'),
+	margin = { top: 10, right: 10, bottom: 100, left: 50 },
+	width = contentDiv.offsetWidth - margin.left - margin.right,
+	height = contentDiv.offsetHeight - margin.top - margin.bottom;
+
+var svg = d3.select('#content').html('').append('svg')
+	.attr('width', width + margin.left + margin.right)
+	.attr('height', height + margin.top + margin.bottom);
+var graph = svg.append('g')
+	.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+var stationLabel = d3.select('#content').append('div')
+	.classed('station-label', true);
+
+var tempsColorScale = d3.scale.quantize()
+	.domain([90, 10])
+	.range(colorbrewer.RdBu[9]);
+
+/**
+ * Load current observations and metadata for all stations within bounds
+ * Note: NWS data requests must go through a CORS proxy, e.g. https://github.com/ericsoco/simpleCORS
+ */
+function loadAllStationsCurrent (cb) {
+
+	// not sure why `zoom` param is relevant when passing `extents`,
+	// but there are fewer stations returned without it.
+	d3.json('http://stamen-simple-cors.herokuapp.com/nws-current/?extents='+ lowerLeft.join(',') +','+ upperRight.join(',') +'&zoom='+ zoom +'&all=1', function (err, rsp) {
+		if (err) { throw err; }
+
+		// clean the data
+		stationData = rsp.stations.map(function (s) {
+			return Object.keys(s).reduce(function (obj, key) {
+				obj[key.toLowerCase()] = s[key];
+				return obj;
+			}, {});
+		});
+
+		cb(err, stationData);
+	});
+
+}
+
+/**
+ * Load 10-min increments of historical observations for a station
+ * Note: NWS data requests must go through a CORS proxy, e.g. https://github.com/ericsoco/simpleCORS
+ */
+function loadStationHistory (stationId, numHours, cb) {
+	numHours = numHours || 168;		// one week
+	// http://www.wrh.noaa.gov/mesowest/getobextJson.php?sid=ZEPNV&num=168
+	d3.json('http://stamen-simple-cors.herokuapp.com/nws-historical/?sid='+ stationId +'&num='+ numHours, function (err, rsp) {
+
+		// clean/parse the data
+		// note: probably don't actually want to spend the cycles
+		// to do this if we're loading on demand, at runtime.
+		rsp = rsp.observations.map(function (s) {
+			return Object.keys(s).reduce(function (obj, key) {
+				obj[key.toLowerCase()] = s[key];
+				return obj;
+			}, {});
+		});
+
+		cb(err, rsp);
+	});
+}
+
+/**
+ * Load daily forecasts for a station for next 7 days
+ * Note: NWS' forecast service *does* support CORS and does not need to be proxied.
+ */
+function loadStationForecast (lat, lon, cb) {
+	// http://forecast.weather.gov/MapClick.php?lat=39.00214&lon=-119.94936&FcstType=json
+	d3.json('http://forecast.weather.gov/MapClick.php?FcstType=json&lat='+ lat +'&lon='+ lon, function (err, rsp) {
+		// TODO: clean/parse the data
+		cb(err, rsp);
+	});
+}
+
+var queue = d3_queue.queue();
+queue.defer(loadAllStationsCurrent);
+queue.await(function () {
+
+	stationData.forEach(function (station) {
+		var markerMarkup = '<h4>' + (station.temp || '?') + '</h4>';
+		var marker = L.marker([station.latitude, station.longitude], {
+			icon: L.divIcon({
+				className: 'station-marker',
+				html: markerMarkup,
+				iconSize: null
+			})
+		}).addTo(map);
+		marker._icon.style.color = tempsColorScale(parseInt(station.temp));
+		var popup = L.popup({
+				closeButton: false
+			})
+			.setContent(capitalize(station.name) + '(' + station.id + ')');
+		marker.on('click', function (event) {
+			var stationQueue = d3_queue.queue();
+			stationQueue.defer(loadStationHistory, station.id, null);
+			stationQueue.await(function (error, historical) {
+				if (error) { throw error; }
+				console.log(">>>>> ["+ station.id +"] historical:", historical);
+				var d33 = d3;
+
+				graph.html('');
+
+				var xScale = d3.time.scale()
+					.range([0, width])
+					.domain(d3.extent(historical, function (d) { return d.udate * 1000; }));
+				var tempRange = d3.extent(historical, function (d) { return d.temp; });
+				var yScale = d3.scale.linear()
+					.range([height, 0])
+					.domain([tempRange[0] - 10, tempRange[1] + 10]);
+
+				var xAxis = d3.svg.axis()
+					.scale(xScale)
+					.tickFormat(dateFormatOut);
+				graph.append('g')
+					.classed('x axis', true)
+					.attr('transform', 'translate(0,' + height + ')')
+					.call(xAxis);
+
+				var yAxis = d3.svg.axis()
+					.scale(yScale)
+					.orient('left');
+				graph.append('g')
+					.classed('y axis', true)
+					.call(yAxis)
+				.append("text")
+					.attr("transform", "rotate(-90)")
+					.attr("y", 6)
+					.attr("dy", ".71em")
+					.style("text-anchor", "end")
+					.text("temp (degrees F)");
+
+				var lineGenerator = d3.svg.line()
+					.x(function (d) { return xScale(d.udate * 1000); })
+					.y(function (d) { return yScale(d.temp); })
+					.interpolate('monotone');
+				graph.append('path')
+					.datum(historical)
+					.classed('historical-line', true)
+					.attr('d', lineGenerator);
+
+				var circleContainer = graph.append('g').selectAll('circle')
+					.data(historical)
+					.classed('historical-datum', true)
+				.enter().append('circle')
+					.attr('cx', function (d) { return xScale(d.udate * 1000); })
+					.attr('cy', function (d) { return yScale(d.temp); })
+					.attr('r', 3)
+					.attr('title', function (d) { return dateFormatOut(new Date(d.udate * 1000)); });
+
+				stationLabel.text(capitalize(station.name) + ' (' + station.id + ') &mdash; historical temps');
+
+			});
+		});
+	});
+
+});
+
+function capitalize (s) {
+    return s.toLowerCase().replace(/\b./g, function (a) {
+    	return a.toUpperCase();
+    });
+};
+
+</script>
+
+</body>
+</html>

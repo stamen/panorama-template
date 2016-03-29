@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Tahoe air data</title>
+<style>
+body {
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	background: #f9f9f9;
+	color: #292929;
+  margin: 20px auto;
+  width: 7000px;
+}
+a { color: #6be; text-decoration: none; }
+.row, .header, .cell { height: 18px; }
+.row, .header { clear: left; }
+.header { font-weight: bold; }
+.cell { float: left; overflow: hidden; width: 100px; }
+.col-0 { width: 180px; }
+</style>
+</head>
+
+<body>
+<h2>NOAA </h2>
+<p>Sensor data from the <a href="http://www.wrh.noaa.gov/mesowest/">National Weather Service</a></p>
+<div id="grid"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.js"></script>
+<script src="divgrid.js"></script>
+
+<script>
+var columns = d3.set(["name", "id"]);
+
+// http://www.wrh.noaa.gov/mesowest/mwXJList.php?extents=38.83756825896614,-120.24948120117188,39.35766163717121,-119.81277465820312
+d3.json("http://stamen-simple-cors.herokuapp.com/nws-current/?extents=38.83756825896614,-120.24948120117188,39.35766163717121,-119.81277465820312", function(error, data) {
+  console.log(data);
+  data.stations.forEach(function(station) {
+    d3.keys(station).forEach(function(d) {
+      columns.add(d);
+    });
+
+    var grid = d3.divgrid()
+      .columns(columns.values());
+
+    d3.select("#grid")
+      .datum(data.stations)
+      .call(grid);
+  });
+});
+</script>

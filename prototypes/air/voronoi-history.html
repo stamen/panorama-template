@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+	background: #f9f9f9;
+	font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #292929;
+}
+pre, svg {
+  float: left;
+}
+
+path {
+  stroke-linejoin: round;
+}
+
+.land {
+  fill: #ddd;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5px;
+}
+
+.voronoi {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.marker {
+  text-anchor: middle;
+  fill: #fff;
+  opacity: 0.8;
+  font-weight: bold;
+}
+
+.cell {
+  opacity: 0.75;
+  -webkit-transition: fill 0.2s; /* Safari */
+  transition: fill 0.2s;
+}
+
+.cell:hover {
+  opacity: 0.9;
+}
+
+</style>
+<body>
+<h2>Temperature History Voronoi</h2>
+<p>A proof-of-concept animated voronoi diagram.</p>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/queue.v1.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script>
+var stations = [];
+var stationHistory = {};
+
+var tempsColorScale = d3.scale.linear()
+	.domain([90, 80, 70, 60, 50, 40, 30, 20, 10])
+	.range(colorbrewer.Blues[9].reverse());
+
+var width = 660,
+    height = 500;
+
+var projection = d3.geo.albers()
+  .rotate([119, -0.4, 0])
+  .scale(28000);
+
+var path = d3.geo.path()
+    .projection(projection)
+    .pointRadius(1.5);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var output = d3.select("body").append("pre")
+  .style("margin", "0 0 0 20px");
+
+queue()
+    .defer(d3.json, "../data/us.json")
+    .defer(d3.json, "http://stamen-simple-cors.herokuapp.com/nws-current/?extents=38.53756825896614,-120.54948120117188,39.65766163717121,-119.51277465820312")
+    .await(ready);
+
+function ready(error, us, sensors) {
+  if (error) throw error;
+
+  stations = sensors.stations.filter(function(d) {
+    return (d.Temp !== "?" &&
+            d.Temp !== undefined &&
+            d.id !== "VCEN2" &&
+            d.id !== "UP686" &&
+            d.id !== "KCNN2");
+  });
+
+
+  svg.append("path")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "states")
+      .attr("d", path);
+
+  var voronoi = d3.geom.voronoi(stations.map(function(d) {
+        return projection([d.longitude, d.latitude]);
+      }));
+
+  svg.selectAll("path.cell")
+      .data(voronoi)
+      .enter().append("path")
+      .attr("class", "cell")
+      .attr("d", function(d) { return "M" + d.join(",") + "Z"; })
+      .style("fill", function(d,i) { return "#777"; });
+
+  svg.append("path")
+      .datum(voronoi)
+      .attr("class", "voronoi")
+      .attr("d", function(d) { return "M" + d.map(function(d) { return d.join("L"); }).join("ZM") + "Z"; });
+
+  svg.selectAll("text.marker")
+      .data(voronoi)
+      .enter().append("text")
+      .attr("class", "marker")
+      .attr("transform", function(d) { return "translate(" + d3.geom.polygon(d3.geom.polygon(d).clip([[0,0], [0,height], [width, height], [width, 0]])).centroid() + ")"})
+      .text(function(d,i) { return stations[i].name; });
+
+      /*
+      .on("mouseover", function(d,i) {
+        var station = stations[i];
+        output.text(station.name + " (" + station.id + ")\nTemp: " + station.Temp);
+      });
+      */
+  stations.forEach(function(d) {
+    loadStationHistory(d.id, 168, function(err, rsp) {
+      stationHistory[d.id] = rsp;
+      stationHistory[d.id].interpolation = rsp;
+    });
+  });
+
+  var counter = 0;
+  d3.timer(function(elapsed) {
+    var counter = d3.round(elapsed/200) % 168;
+    output.text("");
+    svg.selectAll("path.cell")
+        .style("fill", function(d,i) {
+          var station = stations[i]
+          var id = station.id;
+          if (!(id in stationHistory)) return "#777";
+          if (stationHistory[id].observations.length <= counter) return "#777";
+
+          var observation = stationHistory[id].observations[counter];
+          if (!("Temp" in observation)) {
+            output.text(output.text() + station.name + " (" + station.id + ") Temp: " + "unknown" + "\n");
+            return "#777";
+          }
+
+          output.text(output.text() + station.name + " (" + station.id + ") Temp: " + observation.Temp + "\n");
+          return tempsColorScale(observation.Temp);
+        });
+
+    svg.selectAll("text.marker")
+       .text(function(d,i) {
+          var station = stations[i]
+          var id = station.id;
+          if (!(id in stationHistory)) return "";
+          if (stationHistory[id].observations.length <= counter) return "";
+
+          var observation = stationHistory[id].observations[counter];
+          if (!("Temp" in observation)) {
+            return "";
+          }
+
+          return observation.Temp;
+       });
+  });
+
+}
+
+/**
+ * Load 10-min increments of historical observations for a station
+ * Note: NWS data requests must go through a CORS proxy, e.g. https://github.com/ericsoco/simpleCORS
+ */
+function loadStationHistory (stationId, numHours, cb) {
+	numHours = numHours || 168;		// one week
+	// http://www.wrh.noaa.gov/mesowest/getobextJson.php?sid=ZEPNV&num=168
+	d3.json('http://stamen-simple-cors.herokuapp.com/nws-historical/?sid='+ stationId +'&num='+ numHours, function (err, rsp) {
+		cb(err, rsp);
+	});
+}
+
+</script>
+
