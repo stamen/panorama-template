@@ -134,8 +134,6 @@ class App extends React.Component {
 
 	computeComponentDimensions () {
 
-		let sassVarss = sassVars;
-
 		let bottomRowHeight,
 			dimensions = {};
 
