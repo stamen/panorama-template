@@ -30,7 +30,11 @@ const history = syncHistoryWithStore(browserHistory, store);
 // Within each component, the store and action creator
 // will be available as `props.store` / `props.actions`.
 const createReduxComponent = (Component, props) => {
-	let propsWithStore = Object.assign({}, props, { store, actions });
+	let propsWithStore = {
+		...props,
+		store,
+		actions
+	};
 	return <Component { ...propsWithStore } />;
 };
 
