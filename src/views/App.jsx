@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Map, TileLayer, GeoJson } from 'react-leaflet';
 
 // import components from @stamen/panorama
-import { } from '@stamen/panorama';
+// import { } from '@stamen/panorama';
 
 // local (not installed via npm) components (views)
 import ExampleComponent from '../components/ExampleComponent.jsx';
