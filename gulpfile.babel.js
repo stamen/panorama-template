@@ -8,6 +8,7 @@ import gulpLoadPlugins from 'gulp-load-plugins';
 import rimraf from 'rimraf';
 import connect from 'gulp-connect';
 import gulpif from 'gulp-if';
+import looseEnvify from 'loose-envify';
 
 // Automatically load any gulp plugins in your package.json
 const $ = gulpLoadPlugins();
@@ -31,7 +32,12 @@ function browserifyTask (options) {
 	// Bundle the application with browserify
 	let appBundler = browserify({
 		entries: [options.src],			// Application entry point; browserify finds and bundles all dependencies from there
-		transform: [babelify],			// Convert ES6 and React .jsx -> vanilla, ES5-compliant .js
+		transform: [[babelify],			// Convert ES6 and React .jsx -> vanilla, ES5-compliant .js
+			[looseEnvify, {
+				NODE_ENV: options.development ? 'development' : 'production',	// set NODE_ENV in compiled code (to optimize react-redux)
+				ROUTE_ALL_TO_ROOT: $.util.env.routeAllToRoot						// set ROUTE_ALL_TO_ROOT to set up react-router (default: false)
+			}]
+		],
 		debug: options.development,		// Gives us sourcemapping
 		cache: {}, packageCache: {}, fullPaths: options.development // watchify requirements
 	});
@@ -142,8 +148,8 @@ function cssTask (options) {
 			gulp.src(options.src)
 				.pipe($.sass())
 				.pipe($.autoprefixer({
-							browsers: ['> 1%', 'last 2 versions']
-						}))
+					browsers: ['> 1%', 'last 2 versions']
+				}))
 				.pipe(gulp.dest(options.dest))
 				.pipe(gulpif(options.reload, connect.reload()))
 				.pipe($.notify({
@@ -209,11 +215,16 @@ function webserverTask (options) {
  * with watcher to pick up changes and rebuild
  */
 gulp.task('default', () => {
-	const reload = (process.argv.indexOf('--reload') > -1) ? true : false;
 
 	rimraf('./build/**', () => {
 
-		const dest = './build';
+		const dest = './build',
+			reload = $.util.env.reload;
+
+		// Specify build mode. This is not the same as NODE_ENV;
+		// this is used to trigger watch mode, source maps, etc.,
+		// while the latter may be used by project code and dependencies
+		// (react, react-redux) to e.g. generate dev/prod packages.
 		const development = true;
 
 		// Copy static html files
@@ -234,6 +245,9 @@ gulp.task('default', () => {
 			"dest"			: "./build",
 			"pathDepth"		: 4
 		});
+
+		// set NODE_ENV in gulp and local server
+		process.env.NODE_ENV = 'development';
 
 		// Lint and bundle and watch for changes
 		browserifyTask({
@@ -279,7 +293,8 @@ gulp.task('dist', () => {
 
 	rimraf('./dist/**', () => {
 
-		const dest = './dist';
+		const dest = './dist',
+			development = false;	
 
 		// Copy static html files
 		copyTask({
@@ -299,23 +314,26 @@ gulp.task('dist', () => {
 			"pathDepth"		: 4
 		});
 
+		// set NODE_ENV in gulp; default to false, unless run with --dev
+		process.env.NODE_ENV = $.util.env.dev ? 'development' : 'production';
+
 		// Bundle
 		browserifyTask({
-			development: false,
+			development,
 			src: './src/main.jsx',
 			dest: dest
 		});
 
 		// transpile variables.json into .scss
 		sassVariablesTask({
-			development: false,
+			development,
 			src: './scss/*.json',
 			dest: './scss/'
 		});
 
 		// Compile Sass
 		cssTask({
-			development: false,
+			development,
 			src: './scss/*.scss',
 			dest: dest
 		});

@@ -30,19 +30,24 @@ const history = syncHistoryWithStore(browserHistory, store);
 // Within each component, the store and action creator
 // will be available as `props.store` / `props.actions`.
 const createReduxComponent = (Component, props) => {
-	let propsWithStore = {
-		...props,
-		store,
-		actions
-	};
+	let propsWithStore = Object.assign({}, props, { store, actions });
 	return <Component { ...propsWithStore } />;
 };
 
 // Render the app as `react-router` <Route>s, within a <Router>
-render((
-	<Router history={ history } createElement={ createReduxComponent }>
-		<Route path='/' component={ App }>
-		</Route>
-		<Route path='*' component={ RouteNotFound } />
-	</Router>
-), document.getElementById('app-container'));
+// TODO: find a better solution (html <base>, set via build step?)
+if (process.env.ROUTE_ALL_TO_ROOT) {
+	// Direct all routes to `App` to support hosting somewhere other than root (e.g. studio.stamen.com)
+	render((
+		<Router history={ history } createElement={ createReduxComponent }>
+			<Route path='*' component={ App } />
+		</Router>
+	), document.getElementById('app'));
+} else {
+	render((
+		<Router history={ history } createElement={ createReduxComponent }>
+			<Route path='/' component={ App } />
+			<Route path='*' component={ RouteNotFound } />
+		</Router>
+	), document.getElementById('app'));
+}
