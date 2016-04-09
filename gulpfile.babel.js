@@ -15,9 +15,10 @@ const $ = gulpLoadPlugins();
 
 // External dependencies you do not want to rebundle while developing,
 // but include in your application deployment
+// TODO: load from package.json
 const dependencies = [
-	'@stamen/panorama',
-	'd3',
+	// '@stamen/panorama',
+	// 'd3',
 	'leaflet',
 	'lodash',
 	'react',
@@ -294,7 +295,7 @@ gulp.task('dist', () => {
 	rimraf('./dist/**', () => {
 
 		const dest = './dist',
-			development = false;	
+			development = false;
 
 		// Copy static html files
 		copyTask({

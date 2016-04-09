@@ -1,6 +1,5 @@
 // import node modules
-import _ from 'lodash';
-import d3 from 'd3';
+import { debounce } from 'lodash';
 import * as React from 'react';
 import { Map, TileLayer, GeoJson } from 'react-leaflet';
 
@@ -14,6 +13,9 @@ import ExampleComponent from '../components/ExampleComponent.jsx';
 import tileLayers from '../../static/tileLayers.json';
 import sassVars from '../../scss/variables.json';
 
+// import { ItemSelector } from '@stamen/panorama';
+import ItemSelector from '@stamen/itemselector';
+// TODO: try npm installing just ItemSelector
 
 // main app container
 class App extends React.Component {
@@ -23,8 +25,9 @@ class App extends React.Component {
 		super(props);
 
 		// bind event handlers
-		this.onWindowResize = _.debounce(this.onWindowResize.bind(this), 250);
+		this.onWindowResize = debounce(this.onWindowResize.bind(this), 250);
 		this.onMapMoved = this.onMapMoved.bind(this);
+		this.onItemSelected = this.onItemSelected.bind(this);
 		this.onAppStateChange = this.onAppStateChange.bind(this);
 
 		// subscribe for future state changes
@@ -46,6 +49,14 @@ class App extends React.Component {
 
 		if (storeState.map) {
 			componentState.map = Object.assign({}, storeState.map);
+		}
+
+		if (storeState.itemSelector) {
+			componentState.itemSelector = {
+				title: storeState.itemSelector.title,
+				items: storeState.itemSelector.items,
+				selectedItem: storeState.itemSelector.selectedItem
+			};
 		}
 
 		if (storeState.exampleComponent) {
@@ -75,7 +86,7 @@ class App extends React.Component {
 
 		// set up initial state
 		this.onAppStateChange();
-		 
+
 	}
 
 	componentDidMount () {
@@ -124,6 +135,10 @@ class App extends React.Component {
 
 		this.computeComponentDimensions();
 
+	}
+
+	onItemSelected (value, index) {
+		this.props.actions.itemSelected(value);
 	}
 
 
@@ -212,6 +227,7 @@ class App extends React.Component {
 					</div>
 					<div className='columns four right-column full-height'>
 						<div className='row top-row template-tile' style={ { height: this.state.dimensions.upperRight.height + 'px' } }>
+							<ItemSelector { ...this.state.itemSelector } onItemSelected={ this.onItemSelected } />
 						</div>
 						<div className='row bottom-row template-tile'>
 						</div>

@@ -1,5 +1,6 @@
 export const SET_STATE = 'SET_STATE';
 export const MAP_MOVED = 'MAP_MOVED';
+export const ITEM_SELECTED = 'ITEM_SELECTED';
 export const EXAMPLE_INITED = 'EXAMPLE_INITED';
 export const EXAMPLE_INCREMENT = 'EXAMPLE_INCREMENT';
 export const EXAMPLE_DECREMENT = 'EXAMPLE_DECREMENT';
@@ -14,11 +15,18 @@ export default function (store) {
 				state
 			});
 		},
-		
+
 		mapMoved (mapState) {
 			store.dispatch({
 				type: MAP_MOVED,
 				value: mapState
+			});
+		},
+
+		itemSelected (value) {
+			store.dispatch({
+				type: ITEM_SELECTED,
+				value: value
 			});
 		},
 
