@@ -1,13 +1,11 @@
 import gulp from 'gulp';
+import gulpLoadPlugins from 'gulp-load-plugins';
 import source from 'vinyl-source-stream';
 import buffer from 'vinyl-buffer';
+import rimraf from 'rimraf';
 import browserify from 'browserify';
 import watchify from 'watchify';
 import babelify from 'babelify';
-import gulpLoadPlugins from 'gulp-load-plugins';
-import rimraf from 'rimraf';
-import connect from 'gulp-connect';
-import gulpif from 'gulp-if';
 import looseEnvify from 'loose-envify';
 
 // Automatically load any gulp plugins in your package.json
@@ -15,15 +13,20 @@ const $ = gulpLoadPlugins();
 
 // External dependencies you do not want to rebundle while developing,
 // but include in your application deployment
-// TODO: load from package.json
+
+// TODO: figure out why the following does not work.
+// it generates an array that is exactly the same as the hardcoded one below...wtf??
+// import packageJson from './package.json';
+// const dependencies = Object.keys(packageJson.dependencies);
 const dependencies = [
 	'@stamen/panorama',
-	// 'd3',
 	'leaflet',
-	'lodash',
 	'react',
 	'react-dom',
-	'react-leaflet'
+	'react-leaflet',
+	'react-router',
+	'react-router-redux',
+	'redux'
 ];
 
 const WEB_SERVER_PORT = 8888;
@@ -60,7 +63,7 @@ function browserifyTask (options) {
 				.on('error', $.util.log)
 				.pipe(source('main.js'))
 				.pipe(gulp.dest(options.dest))
-				.pipe(gulpif(options.reload, connect.reload()))
+				.pipe($.if(options.reload, $.connect.reload()))
 				.pipe($.notify({
 					'onLast': true,
 					'message': function () { return 'APP bundle built in ' + (Date.now() - start) + 'ms'; }
@@ -132,7 +135,7 @@ function sassVariablesTask (options) {
 			.pipe($.jsonSass())
 			.pipe($.concat('./variables-derived.scss'))
 			.pipe(gulp.dest(options.dest))
-			.pipe(gulpif(options.reload, connect.reload()));
+			.pipe($.if(options.reload, $.connect.reload()));
 	};
 	run();
 
@@ -152,7 +155,7 @@ function cssTask (options) {
 					browsers: ['> 1%', 'last 2 versions']
 				}))
 				.pipe(gulp.dest(options.dest))
-				.pipe(gulpif(options.reload, connect.reload()))
+				.pipe($.if(options.reload, $.connect.reload()))
 				.pipe($.notify({
 					'onLast': true,
 					'title': 'CSS bundle',
@@ -206,7 +209,7 @@ function webserverTask (options) {
 
 	if (options.reload) opts.livereload = true;
 
-	return connect.server(opts);
+	return $.connect.server(opts);
 }
 
 
