@@ -4,7 +4,9 @@ import * as React from 'react';
 import { Map, TileLayer, GeoJson } from 'react-leaflet';
 
 // import components from @stamen/panorama
-// import { } from '@stamen/panorama';
+import { ItemSelector } from '@stamen/panorama';
+// Note: can also just `npm install` individual components, and import like so:
+// import ItemSelector from '@stamen/itemselector';
 
 // local (not installed via npm) components (views)
 import ExampleComponent from '../components/ExampleComponent.jsx';
@@ -12,10 +14,6 @@ import ExampleComponent from '../components/ExampleComponent.jsx';
 // config
 import tileLayers from '../../static/tileLayers.json';
 import sassVars from '../../scss/variables.json';
-
-// import { ItemSelector } from '@stamen/panorama';
-import ItemSelector from '@stamen/itemselector';
-// TODO: try npm installing just ItemSelector
 
 // main app container
 class App extends React.Component {

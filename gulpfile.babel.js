@@ -17,7 +17,7 @@ const $ = gulpLoadPlugins();
 // but include in your application deployment
 // TODO: load from package.json
 const dependencies = [
-	// '@stamen/panorama',
+	'@stamen/panorama',
 	// 'd3',
 	'leaflet',
 	'lodash',

@@ -11,7 +11,7 @@
   },
   "author": "stamen",
   "dependencies": {
-    "@stamen/itemselector": "^0.1.0",
+    "@stamen/panorama": "^0.2.3",
     "leaflet": "^0.7.7",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",

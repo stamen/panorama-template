@@ -145,8 +145,12 @@ header {
 	height: 100%;
 }
 
+// Override styles from @stamen/panorama
 .panorama {
 	&.item-selector {
+		h3 {
+			@extend %better-helvetica-bold;
+		}
 		ul {
 			height: 4.5em;
 		}
