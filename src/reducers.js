@@ -83,8 +83,8 @@ export default {
 export const initialState = {
 
 	map: {
-		zoom: 5,
-		center: [-3.300, 2.800]
+		zoom: 6,
+		center: [39.098, -120.039]
 	},
 
 	itemSelector: {
