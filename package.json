@@ -9,9 +9,14 @@
     "dist-dev": "gulp dist --dev --routeAllToRoot",
     "lint": "eslint ./src"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stamen/panorama-template.git"
+  },
   "author": "stamen",
+  "license": "ISC",
   "dependencies": {
-    "@stamen/panorama": "^0.3.1",
+    "@stamen/panorama": "^0.3.2",
     "leaflet": "^0.7.7",
     "react": "^15.0.1",
     "react-dom": "^15.0.1",
