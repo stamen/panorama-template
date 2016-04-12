@@ -11,10 +11,10 @@
   },
   "author": "stamen",
   "dependencies": {
-    "@stamen/panorama": "^0.2.3",
+    "@stamen/panorama": "^0.3.1",
     "leaflet": "^0.7.7",
-    "react": "^0.14.7",
-    "react-dom": "^0.14.7",
+    "react": "^15.0.1",
+    "react-dom": "^15.0.1",
     "react-leaflet": "^0.10.2",
     "react-router": "^2.0.1",
     "react-router-redux": "^4.0.0",
