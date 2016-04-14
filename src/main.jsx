@@ -1,11 +1,13 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { createStore, combineReducers } from 'redux';
-import { Router, Route, browserHistory } from 'react-router';
+import { Router, Route, IndexRoute, useRouterHistory } from 'react-router';
+import { createHistory } from 'history';
 import { routerReducer, syncHistoryWithStore } from 'react-router-redux';
 
 import App from './views/App.jsx';
 import RouteNotFound from './views/404.jsx';
+
 import reducers, { initialState } from './reducers';
 import actionCreator from './actions';
 
@@ -22,10 +24,14 @@ const store = createStore(
 const actions = actionCreator(store);
 
 // Set up a history object whose state will stay in sync with the store,
-// using `react-router-redux`
+// using `react-router-redux`. Optionally specify a base path
+// as an environment variable.
+const browserHistory = useRouterHistory(createHistory)({
+	basename: process.env.BASE_URL || '/'
+});
 const history = syncHistoryWithStore(browserHistory, store);
 
-// Pass the session store and actionCreator into 
+// Pass the session store and actionCreator into
 // every component created by `react-router`.
 // Within each component, the store and action creator
 // will be available as `props.store` / `props.actions`.
@@ -35,19 +41,11 @@ const createReduxComponent = (Component, props) => {
 };
 
 // Render the app as `react-router` <Route>s, within a <Router>
-// TODO: find a better solution (html <base>, set via build step?)
-if (process.env.ROUTE_ALL_TO_ROOT) {
-	// Direct all routes to `App` to support hosting somewhere other than root (e.g. studio.stamen.com)
-	render((
-		<Router history={ history } createElement={ createReduxComponent }>
-			<Route path='*' component={ App } />
-		</Router>
-	), document.getElementById('app'));
-} else {
-	render((
-		<Router history={ history } createElement={ createReduxComponent }>
-			<Route path='/' component={ App } />
-			<Route path='*' component={ RouteNotFound } />
-		</Router>
-	), document.getElementById('app'));
-}
+render((
+	<Router history={ history } createElement={ createReduxComponent }>
+		<Route path='/' component={ App }>
+			<IndexRoute component={ App } />
+		</Route>
+		<Route path='*' component={ RouteNotFound } />
+	</Router>
+), document.getElementById('app'));
