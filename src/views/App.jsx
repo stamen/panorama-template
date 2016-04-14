@@ -136,7 +136,9 @@ class App extends React.Component {
 	}
 
 	onItemSelected (value, index) {
+
 		this.props.actions.itemSelected(value);
+
 	}
 
 
@@ -186,22 +188,31 @@ class App extends React.Component {
 	// Render functions
 	// ============================================================ //
 
-	renderTileLayers () {
+	renderTileLayers (url) {
 
 		let layers = [];
 
-		if (tileLayers.layers) {
-			layers = layers.concat(tileLayers.layers.map((item, i) => {
-				return (
-					<TileLayer
-						key={ 'tile-layer-' + i }
-						url={ item.url }
-					/>
-				);
-			}));
+		if (url) {
+
+			layers.push({
+				url: url
+			});
+
+		} else if (tileLayers.layers) {
+
+			layers = layers.concat(tileLayers.layers);
+
 		}
 
-		return layers;
+		return layers.map((item, i) => {
+			return (
+				<TileLayer
+					key={ 'tile-layer-' + i }
+					url={ item.url }
+				/>
+			);
+		});
+
 	}
 
 	render () {
@@ -216,7 +227,7 @@ class App extends React.Component {
 						</header>
 						<div className='row top-row template-tile' style={ { height: this.state.dimensions.upperLeft.height + 'px' } }>
 						<Map { ...this.state.map } onLeafletMoveend={ this.onMapMoved }>
-								{ this.renderTileLayers() }
+								{ this.renderTileLayers(this.state.itemSelector && this.state.itemSelector.selectedItem && this.state.itemSelector.selectedItem.url) }
 							</Map>
 						</div>
 						<div className='row bottom-row template-tile'>

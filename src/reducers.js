@@ -90,15 +90,15 @@ export const initialState = {
 	itemSelector: {
 		title: 'Select a tileset',
 		items: [
-			{ "id": 1, "name": "Toner" },
-			{ "id": 2, "name": "Toner Background" },
-			{ "id": 3, "name": "Toner Lite" },
-			{ "id": 4, "name": "Terrain" },
-			{ "id": 5, "name": "Terrain Background" },
-			{ "id": 6, "name": "Watercolor" },
-			{ "id": 7, "name": "Satellite" },
-			{ "id": 8, "name": "Positron" },
-			{ "id": 9, "name": "Dark Matter" }
+			{ "id": 1, "name": "Toner", "url": "http://tile.stamen.com/toner/{z}/{x}/{y}.png" },
+			{ "id": 2, "name": "Toner Background", "url": "http://tile.stamen.com/toner-background/{z}/{x}/{y}.png" },
+			{ "id": 3, "name": "Toner Lite", "url": "http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png" },
+			{ "id": 4, "name": "Terrain", "url": "http://tile.stamen.com/terrain/{z}/{x}/{y}.png" },
+			{ "id": 5, "name": "Terrain Background", "url": "http://tile.stamen.com/terrain-background/{z}/{x}/{y}.png" },
+			{ "id": 6, "name": "Watercolor", "url": "http://tile.stamen.com/watercolor/{z}/{x}/{y}.png" },
+			{ "id": 7, "name": "Satellite", "url": "http://tile.stamen.com/terrain-background/{z}/{x}/{y}.png" },
+			{ "id": 8, "name": "Positron", "url": "http://cartodb-basemaps-a.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png" },
+			{ "id": 9, "name": "Dark Matter", "url": "http://cartodb-basemaps-a.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png" }
 		]
 	},
 
