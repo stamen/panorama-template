@@ -1,14 +1,15 @@
+// variables used in skeleton and app
+@import 'variables';
+
 // lib styles
-@import "lib/skeleton";
-@import "lib/normalize";
+@import 'lib/skeleton';
 
 // @stamen/panorama component styles
-@import "./node_modules/@stamen/itemselector/style";
+@import './node_modules/@stamen/itemselector/style';
 
 // application-wide styles
-@import "variables";
-@import "layout";
-@import "typography";
+@import 'fonts';
+@import 'app';
 
 // local component styles
-@import "components/exampleComponent";
+@import 'components/exampleComponent';
