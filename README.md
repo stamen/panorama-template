@@ -1,11 +1,9 @@
 # Panorama Template
 Stripped-down, modernized version of the [American Panorama template](https://github.com/americanpanorama/panorama-template). This template/boilerplate offers a starting point for creating applications that use components from [Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama). It is built using [React](https://facebook.github.io/react/), [Redux](redux.js.org), and [React Router](https://github.com/reactjs/react-router), but uses only a minimal subset of offerings from each. While designed to be used with [Panorama toolkit](https://github.com/stamen/panorama), at it's heart it's really just a React project template, and can be used with or without the Panorama components.
 
-#### ***** N.B. *****
-_[Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama) is not yet published on npm. Until it is, either `npm link` to a local copy of Stamen Panorama, or just remove it from `package.json` if you don't need it. If you remove it, be sure to remove it from `gulpfile.babel.js` as well.  --@ericsoco 2016.04.01
 
 ## Setup
-#### 1. Set up required Node version 
+#### 1. Set up required Node version
 
 Ensure that your Node version matches that present in `.nvmrc`.
 [`nvm`](https://github.com/creationix/nvm) is the easiest way to do this on Mac, [`nvm-windows`](https://github.com/coreybutler/nvm-windows/releases) on Windows. Installation instructions are in each of those links.
@@ -30,7 +28,6 @@ Load required **npm** modules.
 ```bash
 npm install
 ```
-
 
 
 ## Develop
