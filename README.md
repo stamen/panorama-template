@@ -1,5 +1,5 @@
 # Panorama Template
-Stripped-down, modernized version of the [American Panorama template](https://github.com/americanpanorama/panorama-template). This template/boilerplate offers a starting point for creating applications that use components from [Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama). It is built using [React](https://facebook.github.io/react/), [Redux](redux.js.org), and [React Router](https://github.com/reactjs/react-router), but uses only a minimal subset of offerings from each. While designed to be used with [Panorama toolkit](https://github.com/stamen/panorama), at it's heart it's really just a React project template, and can be used with or without the Panorama components.
+Stripped-down, modernized (as of April 2016) version of the [American Panorama template](https://github.com/americanpanorama/panorama-template). This template/boilerplate offers a starting point for creating applications that use components from [Stamen](http://stamen.com)'s [Panorama toolkit](https://github.com/stamen/panorama). It is built using [React](https://facebook.github.io/react/), [Redux](redux.js.org), and [React Router](https://github.com/reactjs/react-router), but uses only a minimal subset of offerings from each. While designed to be used with [Panorama toolkit](https://github.com/stamen/panorama), at it's heart it's really just a React project template, and can be used with or without the Panorama components.
 
 
 ## Setup
@@ -12,7 +12,7 @@ To use `nvm` to switch Node versions:
 
 ```bash
 $ nvm install
-Found '/Users/seth/src/americanpanorama/panorama-template/.nvmrc' with version <5.9.1>
+Found '/Users/ericsoco/stamen/panorama-template/.nvmrc' with version <5.9.1>
 ######################################################################## 100.0%
 Now using node v5.9.1 (npm v2.11.3)
 ```
@@ -57,9 +57,12 @@ The template is written in ES6, and compiled down to ES5 via [Babel](https://bab
 #### Redux
 A single Redux [store](http://redux.js.org/docs/basics/Store.html) and [action creator](http://redux.js.org/docs/basics/Actions.html) are instantiated there, and passed down into the application. They are passed through the React component tree, available as props (in a component, as `this.props.store` and `this.props.actions`, respectively). This pattern allows the application to be used in a server-rendering context as well, keeping application state separate for each session. [Reducers](http://redux.js.org/docs/basics/Reducers.html) live in [`reducers.js`](./src/reducers.js), and the action creator exists within [`actions.js`](./src/actions.js).
 
-
 #### Router configuration
 React Router acts as the primary framework within which applications using this template are built. The router configuration (mapping of paths to views) exists within the React `render()` call in [`main.jsx`](./src/main.jsx). Router views are generally defined within [`./src/views/`](./src/views/), while local components (those not imported from Panorama) live within [`./src/components/`](./src/components/). This runs parallel to the concept of ["container and presentational" components](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0#.mcwowhpa9).
 
 #### Sass variables
 The template uses [`gulp-json-sass`](https://github.com/rbalicki2/gulp-json-sass) to allow variables to be shared across Sass and JavaScript. Variables added to [`variables.json`](./scss/variables.json) can be `import`ed into JavaScript files. The project build compiles them into Sass variables, which are imported from [`variables-derived.scss`](./scss/variables-derived.scss). Examples of this exist within [`App.jsx`](./src/views/App.jsx) and [`_layout.scss`](./scss/_layout.scss).
+
+#### Skeleton
+The template uses a slightly modified [Sass version](https://github.com/WhatsNewSaes/Skeleton-Sass) of [Skeleton](http://getskeleton.com/). To minimize the compiled CSS footprint, comment out any unused Skeleton modules in [`_skeleton.scss`](./scss/lib/_skeleton.scss).
+
