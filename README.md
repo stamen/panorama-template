@@ -39,6 +39,7 @@ npm start
 Open browser to [http://localhost:8888/](http://localhost:8888/)
 
 
+
 ##Deploy
 **To use development code**: Copy the [build directory](./build) to your server, but for **production** you will want to run:
 
@@ -47,6 +48,14 @@ Open browser to [http://localhost:8888/](http://localhost:8888/)
 This will create a `dist` directory. Move this directory to your server.
 
 Both directories are all **static files**, so no special server requirements needed.
+
+#### Serving from a path other than root
+
+If you're deploying to a path other than `'/'`, use the `--baseUrl` parameter when running a build script (e.g. `npm run dist`). In order for `react-router` to resolve routes correctly, its history instance must be set up with the correct [`basename`](https://github.com/reactjs/react-router/issues/353#issuecomment-147698452). With a basename set up, static resouces at relative paths (e.g. stylesheets and scripts loaded from `index.html`) will not load correctly when one or more paths deep in the application/router URL. So, we complement `react-router`'s `basename` with a [`<base>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base) tag, and set `href` to the same value (i.e. `<base href="<baseUrl>">`).
+
+This is an issue when deploying to studio.stamen.com; therefore, there is already an `npm` script set up to make this easier in `package.json`, called `dist-studio`. Modify the `--baseUrl` param value accordingly to use it.
+
+The `baseUrl` value gets written to a node environment variable when running locally (served via `gulp-connect`), hardcoded into the compiled application with [`loose-envify`](https://www.npmjs.com/package/loose-envify), and written to `index.html` using [`gulp-html-replace`](https://www.npmjs.com/package/gulp-html-replace).
 
 
 
